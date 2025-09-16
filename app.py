@@ -184,7 +184,7 @@ def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None) -
         for _, row in df_scores.iterrows():
             fig.add_trace(go.Scatterpolar(r=mk(row), theta=axes+[axes[0]], fill="toself", name=row["model"]))
     fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0,1])))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 @st.cache_data
 def list_pairwise_files(pairwise_dir: str) -> List[str]:
@@ -423,7 +423,7 @@ with st.expander("Quick Compare (content-only)"):
     else:
         qc_topn = compare_uploaded_to_refs(uploaded_rdf, ref_df, top_n)
         if not qc_topn.empty:
-            st.dataframe(qc_topn, use_container_width=True)
+            st.dataframe(qc_topn, width="stretch")
         else:
             st.info("Could not compute comparison (empty feature vectors).")
 
@@ -473,7 +473,7 @@ if target_model:
             topn_df = build_topn_from_matrix(mat_total, target_model, top_n)
             st.caption("Pairwise CSV columns did not match expected names; Top-N is derived from the matrix.")
         if not topn_df.empty:
-            st.dataframe(topn_df, use_container_width=True)
+            st.dataframe(topn_df, width="stretch")
         else:
             st.info("Could not build Top-N (CSV/matrix not available).")
     else:
@@ -489,7 +489,7 @@ if target_model:
                 view = sel[["other","S_total_fused","S_content","S_typed","S_edge","S_struct"]] \
                         .sort_values("S_total_fused", ascending=False).head(top_n) \
                         .reset_index(drop=True)
-                st.dataframe(view, use_container_width=True)
+                st.dataframe(view, width="stretch")
                 st.caption(f"Fusion weights: content={FUSION_W['content']}  typed={FUSION_W['typed']}  edge={FUSION_W['edge']}  struct={FUSION_W['struct']}.")
 
 # Visualizations (Total)
@@ -497,12 +497,12 @@ st.header("Visualizations: Total similarity")
 c1, c2 = st.columns(2)
 with c1:
     st.subheader("Heatmap")
-    if heatmap_png: st.image(heatmap_png, use_container_width=True)
+    if heatmap_png: st.image(heatmap_png, width="stretch")
     elif not mat_total.empty: plot_heatmap_from_matrix(mat_total, "Total similarity (0–1)")
     else: st.info("Heatmap image or matrix not found.")
 with c2:
     st.subheader("Dendrogram")
-    if dendro_png: st.image(dendro_png, use_container_width=True)
+    if dendro_png: st.image(dendro_png, width="stretch")
     elif not mat_total.empty: plot_dendrogram_from_matrix(mat_total, "Hierarchical clustering (distance = 1 − S_total)")
     else: st.info("Dendrogram image or matrix not found.")
 
