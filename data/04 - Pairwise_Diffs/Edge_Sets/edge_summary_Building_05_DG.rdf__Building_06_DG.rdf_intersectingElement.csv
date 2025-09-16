@@ -1,0 +1,2 @@
+model_a,model_b,predicate,jaccard,edges_A,edges_B,edges_intersection,edges_onlyA,edges_onlyB,nodes_A,deg_mean_A,deg_med_A,deg_max_A,nodes_B,deg_mean_B,deg_med_B,deg_max_B
+Building_05_DG.rdf,Building_06_DG.rdf,intersectingElement,0.0,0,0,0,0,0,0,0,0,0,0,0,0,0

@@ -1,0 +1,21 @@
+{
+  "weights_input": {
+    "w_content": 0.3,
+    "w_typed": 0.2,
+    "w_edge": 0.1,
+    "w_motif": 0.4
+  },
+  "weights_normalized": {
+    "w_content": 0.3,
+    "w_typed": 0.2,
+    "w_edge": 0.1,
+    "w_motif": 0.4
+  },
+  "models": [
+    "Building_05_DG.rdf",
+    "Building_06_DG.rdf",
+    "Freiform_Haus_DG.rdf",
+    "Option03_Revising_DG.rdf",
+    "Option04_Rev03_DG.rdf"
+  ]
+}
