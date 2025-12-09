@@ -398,6 +398,21 @@ if DEBUG_MODE:
         st.write(f"**S3_system loaded?** {not DATA['S3_system'].empty}")
         st.write(f"**S4_functional loaded?** {not DATA['S4_functional'].empty}")
         st.write(f"**s3_system_scores loaded?** {not DATA['s3_system_scores'].empty}")
+        
+        st.markdown("---")
+        st.markdown("### 🔬 Direct Load Test (total_similarity_matrix.csv)")
+        test_path = CHANNEL_DIR / "total_similarity_matrix.csv"
+        st.write(f"**Path:** `{test_path}`")
+        st.write(f"**Exists?** {test_path.exists()}")
+        if test_path.exists():
+            st.write(f"**File size:** {test_path.stat().st_size} bytes")
+            try:
+                test_df = pd.read_csv(test_path, index_col=0)
+                st.success(f"✅ Manual load SUCCESSFUL! Shape: {test_df.shape}")
+                st.write("**First 2 index values:**", list(test_df.index[:2]))
+                st.write("**First 2 column values:**", list(test_df.columns[:2]))
+            except Exception as e:
+                st.error(f"❌ Manual load FAILED: {type(e).__name__}: {str(e)}")
 
 st.markdown("---")
 
