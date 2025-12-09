@@ -36,6 +36,9 @@ STRUCT_PIPELINE_DIR = BUNDLE_DIR / "STRUCTURAL_PIPELINE"
 # Authoritative fusion weights (aligned with thesis)
 FUSION_W = {"content": 0.30, "typed": 0.20, "edge": 0.10, "struct": 0.40}
 
+# DEBUG MODE for deployment troubleshooting (set to False after cloud works)
+DEBUG_MODE = True
+
 # =========================================
 # SIDEBAR
 # =========================================
@@ -348,6 +351,16 @@ comprehensive design similarity.
 if uploaded_rdf is not None:
     triples, nodes = short_rdf_info(uploaded_rdf)
     st.info(f"📄 **Uploaded:** {uploaded_rdf.name}  |  Triples: {triples}  |  Unique subjects: {nodes}")
+
+# DEBUG section for deployment troubleshooting
+if DEBUG_MODE:
+    with st.expander("🔍 DEBUG: Deployment Check", expanded=False):
+        st.write("**Working Dir:**", os.getcwd())
+        st.write("**data/ exists?**", DATA_DIR.exists())
+        st.write("**bundle exists?**", BUNDLE_DIR.exists())
+        if DATA_DIR.exists():
+            files = list(DATA_DIR.iterdir())
+            st.write(f"**Files in data/:** {len(files)}")
 
 st.markdown("---")
 
