@@ -385,6 +385,19 @@ if DEBUG_MODE:
             st.write(f"**Files in STRUCTURAL_PIPELINE/:** {len(files)}")
         else:
             st.error("❌ STRUCTURAL_PIPELINE folder NOT FOUND!")
+        
+        st.markdown("---")
+        st.markdown("### 📊 Data Loading Status")
+        st.write(f"**Model list (DATA['models']):** {len(DATA['models'])} models")
+        if DATA['models']:
+            st.write("**Models:**", DATA['models'][:3], "..." if len(DATA['models']) > 3 else "")
+        
+        st.write(f"**total_matrix loaded?** {not DATA['total_matrix'].empty} (shape: {DATA['total_matrix'].shape if not DATA['total_matrix'].empty else 'empty'})")
+        st.write(f"**S1_adjacency loaded?** {not DATA['S1_adjacency'].empty} (shape: {DATA['S1_adjacency'].shape if not DATA['S1_adjacency'].empty else 'empty'})")
+        st.write(f"**S2_motif loaded?** {not DATA['S2_motif'].empty}")
+        st.write(f"**S3_system loaded?** {not DATA['S3_system'].empty}")
+        st.write(f"**S4_functional loaded?** {not DATA['S4_functional'].empty}")
+        st.write(f"**s3_system_scores loaded?** {not DATA['s3_system_scores'].empty}")
 
 st.markdown("---")
 
