@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-10-31T13:11:45Z",
+  "git_commit": "12496c3",
+  "n_models": 10,
+  "rdf_root": "data/RDF_models_all15",
+  "weights_file": "weights_used.json",
+  "channels": [
+    "structural",
+    "typed_edge",
+    "edge_sets",
+    "content"
+  ]
+}

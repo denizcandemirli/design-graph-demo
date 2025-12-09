@@ -1,0 +1,11 @@
+model,adjacentElement,adjacentZone,intersectingElement,BFO_0000178,total_strong_topo,total_weak_topo,dominant_element,max_adj_count
+2_Floor_Haus_BuildingArabic05.rdf,113,51,0,0,113,51,None,0
+2_Floor_Haus_BuildingArabic06.rdf,103,105,0,0,103,105,None,0
+2_Floor_Haus_Peri.rdf,98,28,0,0,98,28,None,0
+2_Floor_RevitDemo_StructuralPlan_Building08.rdf,19,8,0,0,19,8,None,0
+2_Floor_SlopedRoof_Revit-2026.rdf,126,56,0,0,126,56,None,0
+7_Floor_Individualized Columns_Building04.rdf,880,1626,0,0,880,1626,None,0
+8_Floor_Pattern Freeform Columns_Building03.rdf,1357,2675,0,0,1357,2675,None,0
+Building_05_DG.rdf,104,43,0,0,104,43,None,0
+Building_06_DG.rdf,82,65,0,0,82,65,None,0
+DFAB_Analog_Building07.rdf,97,56,0,0,97,56,None,0

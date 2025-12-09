@@ -1,0 +1,412 @@
+{
+  "2_Floor_Haus_BuildingArabic05.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "2_Floor_Haus_BuildingArabic06.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "2_Floor_Haus_Peri.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "2_Floor_RevitDemo_StructuralPlan_Building08.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 10,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 10,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 10
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 15,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 25,
+      "frame_count": 15
+    }
+  },
+  "2_Floor_SlopedRoof_Revit-2026.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 10,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 10
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 3,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 3,
+      "frame_count": 10
+    }
+  },
+  "7_Floor_Individualized Columns_Building04.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "8_Floor_Pattern Freeform Columns_Building03.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "Building_05_DG.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "Building_06_DG.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  },
+  "DFAB_Analog_Building07.rdf": {
+    "M2_frameNode": {
+      "count": 5,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_beam": true,
+      "has_column": true,
+      "beam_count": 5,
+      "column_count": 5
+    },
+    "M3_wallSlab": {
+      "count": 6,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_wall": true,
+      "has_slab": true,
+      "wall_count": 35,
+      "slab_count": 6
+    },
+    "M4_core": {
+      "count": 4,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_core": true,
+      "has_slab": true,
+      "core_count": 4
+    },
+    "M2b_braceNode": {
+      "count": 2,
+      "used_strong": false,
+      "used_weak": false,
+      "used_proxy": true,
+      "has_brace": true,
+      "has_frame": true,
+      "brace_count": 2,
+      "frame_count": 10
+    }
+  }
+}

@@ -1,2 +1,0 @@
-model_a,model_b,predicate,jaccard,edges_A,edges_B,edges_intersection,edges_onlyA,edges_onlyB,nodes_A,deg_mean_A,deg_med_A,deg_max_A,nodes_B,deg_mean_B,deg_med_B,deg_max_B
-Option03_Revising_DG.rdf,Option04_Rev03_DG.rdf,adjacentZone,0.0,1427,1136,0,1427,1136,197,14.487,14.0,49,136,16.706,16.0,100

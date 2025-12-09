@@ -1,0 +1,32 @@
+{
+  "weights_input": {
+    "w_content": 0.3,
+    "w_typed": 0.2,
+    "w_edge": 0.1,
+    "w_struct": 0.4
+  },
+  "weights_normalized": {
+    "w_content": 0.3,
+    "w_typed": 0.2,
+    "w_edge": 0.1,
+    "w_struct": 0.4
+  },
+  "structural_source": {
+    "type": "counts",
+    "struct_sim_file": "thesis_submission_bundle_ALL_2\\CHANNEL_MATRICES\\structural_similarity_matrix.csv",
+    "struct_sp_file": null,
+    "hybrid_alpha": null
+  },
+  "models": [
+    "2_Floor_Haus_BuildingArabic05.rdf",
+    "2_Floor_Haus_BuildingArabic06.rdf",
+    "2_Floor_Haus_Peri.rdf",
+    "2_Floor_RevitDemo_StructuralPlan_Building08.rdf",
+    "2_Floor_SlopedRoof_Revit-2026.rdf",
+    "7_Floor_Individualized Columns_Building04.rdf",
+    "8_Floor_Pattern Freeform Columns_Building03.rdf",
+    "Building_05_DG.rdf",
+    "Building_06_DG.rdf",
+    "DFAB_Analog_Building07.rdf"
+  ]
+}

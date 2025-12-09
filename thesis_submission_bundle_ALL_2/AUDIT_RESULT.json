@@ -1,0 +1,7 @@
+{
+  "N_models": 10,
+  "fusion_allclose": true,
+  "S1S4_mean_offdiag": 0.945604,
+  "TOTAL_mean_offdiag": 0.806747,
+  "status": "OK"
+}

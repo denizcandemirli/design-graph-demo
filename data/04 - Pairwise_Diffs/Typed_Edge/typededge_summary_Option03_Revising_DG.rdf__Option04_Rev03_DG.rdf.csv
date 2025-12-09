@@ -1,2 +1,0 @@
-model_a,model_b,typed_edge_cosine_recomputed,typed_edge_jaccard_recomputed,triples_nonzero_A,triples_nonzero_B,triples_overlap,sum_counts_A,sum_counts_B
-Option03_Revising_DG.rdf,Option04_Rev03_DG.rdf,0.5800988027736782,0.27450980392156865,94,36,28,4403,2978

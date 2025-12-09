@@ -1,0 +1,148 @@
+# Structural Channel Diagnostic Report
+## Interactive Similarity Comparison for BIM-based Design
+### Deniz Can Demirli - Thesis Presentation Analysis
+
+---
+
+## 1. Structural Evidence Used
+
+### Adjacency Evidence
+
+- **Models with adjacency relations**: 10/10
+- **Average adjacentElement count**: 297.90
+- **Average intersectingElement count**: 0.00
+- **BFO:0000178 (hasContinuantPart) usage**: 0 models
+- **Dominant elements in adjacency**: None
+
+### Motif Extraction (M2-M5)
+
+- **Total motif extractions**: 40
+- **Failed extractions**: 0
+- **Proxy-based detections**: 40
+
+### System Family Scoring
+
+**Dominant System per Model:**
+- 2_Floor_Haus_BuildingArabic05.rdf: Wall (score: 0.1189)
+- 2_Floor_Haus_BuildingArabic06.rdf: Wall (score: 0.0862)
+- 2_Floor_Haus_Peri.rdf: Wall (score: 0.0607)
+- 2_Floor_RevitDemo_StructuralPlan_Building08.rdf: Wall (score: 0.0333)
+- 2_Floor_SlopedRoof_Revit-2026.rdf: Wall (score: 0.0650)
+
+**System Score Ranges:**
+- Frame: [0.0052, 0.0082]
+- Wall: [0.0244, 0.4571]
+- Dual: [0.0052, 0.0082]
+- Braced: [0.0202, 0.0319]
+
+### Functional Roles (S4)
+
+- **Models with explicit roles**: 9/10
+- **Average role shares**: LB=0.4270, Shear=0.0000, Moment=0.0000, Bracing=0.0000
+- **S4 similarity mean**: 0.8000
+- **S4 near-zero**: No
+
+---
+
+## 2. Structural Similarity Differentiation
+
+### Channel Statistics (Off-Diagonal)
+
+| Channel | Mean | Min | Max | Std |
+|---------|------|-----|-----|-----|
+| S1 (Adjacency) | 0.9583 | 0.8400 | 1.0000 | 0.0469 |
+| S2 (Motif) | 0.9202 | 0.6128 | 1.0000 | 0.0985 |
+| S3 (System) | 0.9710 | 0.8734 | 1.0000 | 0.0331 |
+| S4 (Functional) | 0.8000 | 0.0000 | 1.0000 | 0.4000 |
+| **S_struct (Fused)** | **0.9456** | **0.7458** | **1.0000** | **0.0636** |
+
+### Channel Dominance
+- **S3 (System) channel dominates** structural similarity computation
+
+---
+
+## 3. Limitations & Data Quality
+
+1. 1 models lack explicit functional roles, making S4 similarity less meaningful
+
+---
+
+## 4. Scientific Explanation for S4 Behavior
+
+
+**S4 (Functional Roles) Analysis:**
+
+1. **Role Distribution**:
+   - Models with functional roles: 9/10
+   - Models without functional roles: 1/10
+   - Role types present: Only LoadBearing (LB) detected; Shear, Moment, Bracing are all zero
+
+2. **S4 Similarity Clustering**:
+   - Models with LB roles show S4≈1.0 with each other (similar role profiles)
+   - Models without roles show S4=0.0 with models that have roles (orthogonal vectors)
+   - This creates a **bimodal distribution** in S4 similarity
+
+3. **Why S4 Mean is 0.8000**:
+   - The mean is pulled up by the large cluster of models with similar LB profiles (S4≈1.0)
+   - The mean is pulled down by comparisons between role-having and role-lacking models (S4=0.0)
+   - This reflects **data quality limitations**, not computational issues
+
+4. **Scientific Interpretation**:
+   - S4 is **functionally meaningful** for models within the same cluster
+   - S4 **cannot differentiate** models that both lack roles (all zero vectors)
+   - S4 **correctly identifies** models with different role profiles (high vs. zero roles)
+   - The absence of Shear, Moment, Bracing roles is a **data limitation**, not a method limitation
+
+**Conclusion**: S4 behavior is **scientifically correct** but **limited by data quality**. The channel works as designed but would benefit from richer functional role annotations in the RDF models.
+
+---
+
+## 5. Specific Model Pair Analysis
+
+### Key Model Pair Analysis (ALL10 Dataset)
+
+**Building_05_DG ↔ Building_06_DG:**
+- S1 (Adjacency): 0.9808
+- S2 (Motif): 0.9978
+- S3 (System): 0.9988
+- S4 (Functional): 1.0000
+- **S_struct (Fused)**: **0.9983**
+
+**Building_05_DG ↔ DFAB_Analog_Building07:**
+- S1 (Adjacency): 0.9957
+- S2 (Motif): 0.9478
+- S3 (System): 0.9814
+- S4 (Functional): 1.0000
+- **S_struct (Fused)**: **0.9646**
+
+**Building_06_DG ↔ DFAB_Analog_Building07:**
+- S1 (Adjacency): 0.9946
+- S2 (Motif): 0.9668
+- S3 (System): 0.9897
+- S4 (Functional): 1.0000
+- **S_struct (Fused)**: **0.9783**
+
+**Interpretation:**
+- B05 and B06 are **highly similar** structurally (S_struct > 0.99), indicating they share similar structural systems
+- S3 (System) channel dominates the similarity computation, indicating system-level alignment
+- S4 (Functional) shows identical profiles (S4=1.0) for models with LoadBearing roles, confirming shared functional role distributions
+- The ALL10 dataset shows consistent structural patterns across models
+
+
+---
+
+## 6. Future Improvements
+
+1. Proxy-based motif detection used in 40 cases. Consider improving structural topology enrichment for more accurate motif extraction
+
+### General Recommendations:
+
+
+1. **Enrichment Pipeline**: Add functional role extraction from IFC properties during RDF conversion
+2. **Motif Detection**: Improve structural topology enrichment to reduce proxy-based motif detection
+3. **Validation**: Cross-validate structural similarity with domain expert assessments
+4. **Scalability**: Test on larger datasets to assess generalization
+
+---
+
+*Report generated by structural_channel_diagnostic.py*

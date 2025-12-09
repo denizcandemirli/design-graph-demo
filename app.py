@@ -1,7 +1,8 @@
-# app.py — Design Graph Similarity Web App (deploy-ready)
+# app.py — Design Graph Similarity Web App (ALL10 Dataset)
+# TUM Master Thesis - Updated for Slide 26 Presentation
 
 from __future__ import annotations
-import os, glob, json
+import os, json
 from pathlib import Path
 from typing import Optional, List
 
@@ -15,45 +16,46 @@ from scipy.spatial.distance import squareform
 import plotly.graph_objects as go
 
 # =========================================
-# PAGE & (optional) simple access gate
+# PAGE CONFIG
 # =========================================
-st.set_page_config(page_title="Design Graph Similarity Web App", layout="wide")
-
-# If you set APP_TOKEN in Streamlit Cloud “Secrets”, uncomment below to require it.
-# if "APP_TOKEN" in st.secrets:
-#     token = st.text_input("Access token", type="password")
-#     if token != st.secrets["APP_TOKEN"]:
-#         st.stop()
+st.set_page_config(
+    page_title="Design Graph Similarity - ALL10 Dataset", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # =========================================
-# DATA PATHS (relative to repo)
+# DATA PATHS (Updated for ALL10)
 # =========================================
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
+BUNDLE_DIR = BASE_DIR / "thesis_submission_bundle_ALL_2"
+CHANNEL_DIR = BUNDLE_DIR / "CHANNEL_MATRICES"
+STRUCT_PIPELINE_DIR = BUNDLE_DIR / "STRUCTURAL_PIPELINE"
 
-TOTAL_DIR     = str(DATA_DIR / "06 - Total_Similarity")
-TOTAL_VIS_DIR = str(DATA_DIR / "06b - Total_Similarity_Visuals")
-STRUCT_DIR    = str(DATA_DIR / "07 - Structural_Extension_v25p2")
-PAIRWISE_DIR  = str(DATA_DIR / "04 - Pairwise_Diffs" / "Typed_Edge")
-
-# Optional local samples; not required in the cloud
-SAMPLES_DIR   = str(BASE_DIR / "samples")
-WORKSPACE_DIR = str(BASE_DIR)
-
-# Authoritative fusion weights (A–D channels)
+# Authoritative fusion weights (aligned with thesis)
 FUSION_W = {"content": 0.30, "typed": 0.20, "edge": 0.10, "struct": 0.40}
 
 # =========================================
 # SIDEBAR
 # =========================================
-st.sidebar.header("Inputs")
-uploaded_rdf = st.sidebar.file_uploader("Current design graph (RDF)", type=["rdf", "ttl", "nt"])
-top_n = st.sidebar.slider("Top-N results", 3, 10, 5)
+st.sidebar.header("🔧 Controls")
+uploaded_rdf = st.sidebar.file_uploader(
+    "Upload Current Design Graph (RDF)", 
+    type=["rdf", "ttl", "nt"],
+    help="Upload your RDF file for quick comparison"
+)
+top_n = st.sidebar.slider("Top-N Results", 3, 10, 5)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📊 Dataset Info")
+st.sidebar.info("**ALL10 Models**\n\n10 architectural design graphs analyzed across 4 channels + 4 structural sub-channels")
 
 # =========================================
-# HELPERS
+# HELPER FUNCTIONS
 # =========================================
 def pick_first_present(cands: List[str], cols: List[str]) -> Optional[str]:
+    """Find first matching column name (case-insensitive)"""
     cmap = {c.strip().lower(): c for c in cols}
     for cand in cands:
         key = cand.strip().lower()
@@ -63,6 +65,7 @@ def pick_first_present(cands: List[str], cols: List[str]) -> Optional[str]:
 
 @st.cache_data
 def short_rdf_info(file) -> tuple[Optional[int], Optional[int]]:
+    """Extract basic RDF statistics"""
     try:
         g = Graph()
         try:
@@ -76,178 +79,138 @@ def short_rdf_info(file) -> tuple[Optional[int], Optional[int]]:
         return None, None
 
 @st.cache_data
-def load_total_similarity(total_dir: str) -> tuple[pd.DataFrame, pd.DataFrame]:
-    pairwise = os.path.join(total_dir, "pairwise_total_summary.csv")
-    matrix   = os.path.join(total_dir, "total_similarity_matrix.csv")
-    df_pairs  = pd.read_csv(pairwise) if os.path.exists(pairwise) else pd.DataFrame()
-    df_matrix = pd.read_csv(matrix, index_col=0) if os.path.exists(matrix) else pd.DataFrame()
-    if not df_pairs.empty:
-        df_pairs.columns = [c.strip() for c in df_pairs.columns]
-    return df_pairs, df_matrix
+def load_csv_safe(path: Path) -> pd.DataFrame:
+    """Load CSV with error handling"""
+    if path.exists():
+        try:
+            df = pd.read_csv(path)
+            if not df.empty:
+                df.columns = [c.strip() for c in df.columns]
+            return df
+        except Exception as e:
+            st.error(f"Error loading {path.name}: {e}")
+    return pd.DataFrame()
 
 @st.cache_data
-def load_total_visuals(vis_dir: str) -> tuple[Optional[str], Optional[str]]:
-    heatmap_png = os.path.join(vis_dir, "total_heatmap.png")
-    dendro_png  = os.path.join(vis_dir, "total_dendrogram.png")
-    return (heatmap_png if os.path.exists(heatmap_png) else None,
-            dendro_png  if os.path.exists(dendro_png)  else None)
+def load_matrix_safe(path: Path) -> pd.DataFrame:
+    """Load similarity matrix with index column"""
+    if path.exists():
+        try:
+            df = pd.read_csv(path, index_col=0)
+            return df
+        except Exception as e:
+            st.error(f"Error loading {path.name}: {e}")
+    return pd.DataFrame()
 
 @st.cache_data
-def load_structural(struct_dir: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    scores = os.path.join(struct_dir, "struct_system_scores.csv")
-    matrix = os.path.join(struct_dir, "struct_similarity_matrix.csv")
-    df_scores = pd.read_csv(scores) if os.path.exists(scores) else pd.DataFrame()
-    df_struct = pd.read_csv(matrix, index_col=0) if os.path.exists(matrix) else pd.DataFrame()
-    pairwise_sum = os.path.join(struct_dir, "pairwise_structural_summary.csv")
-    df_pair = pd.read_csv(pairwise_sum) if os.path.exists(pairwise_sum) else pd.DataFrame()
-    if not df_pair.empty:
-        df_pair.columns = [c.strip() for c in df_pair.columns]
-    return df_scores, df_struct, df_pair
+def load_json_safe(path: Path) -> dict:
+    """Load JSON with error handling"""
+    if path.exists():
+        try:
+            with open(path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            st.error(f"Error loading {path.name}: {e}")
+    return {}
 
-def build_topn_from_matrix(matrix_df: pd.DataFrame, model_name: str, n: int = 5) -> pd.DataFrame:
-    if matrix_df.empty or model_name not in matrix_df.index:
-        return pd.DataFrame()
-    s = matrix_df.loc[model_name].drop(labels=[model_name]).sort_values(ascending=False).head(n)
-    df = s.reset_index()
-    df.columns = ["other", "S_total"]
-    return df
-
-def filter_topn_for_model(pairs_df: pd.DataFrame, model_name: str, n: int = 5) -> pd.DataFrame:
-    if pairs_df.empty or not model_name:
-        return pd.DataFrame()
-    cols = [c.strip() for c in pairs_df.columns.tolist()]
-    a_col = pick_first_present(["model_a","model_A","A","left","source","model1","name_a","file_a"], cols)
-    b_col = pick_first_present(["model_b","model_B","B","right","target","model2","name_b","file_b"], cols)
-    score_col = pick_first_present(
-        ["total_similarity","final_similarity","S_total","S_final","score_total","score","similarity","S","total"], cols
-    )
-    if not a_col or not b_col or not score_col:
-        return pd.DataFrame()
-    df = pairs_df[(pairs_df[a_col] == model_name) | (pairs_df[b_col] == model_name)].copy()
-    if df.empty:
-        return pd.DataFrame()
-    df["other"] = np.where(df[a_col] == model_name, df[b_col], df[a_col])
-
-    keep = ["other", score_col]
-    for cand in [
-        "S_content","S_typed","S_edge","S_struct",
-        "content_cos","typed_edge_cos","edge_sets_jaccard","motif_final",
-        "content_cosine","typed_edge_cosine","edge_jaccard_combined","structural_similarity"
-    ]:
-        col = pick_first_present([cand], cols)
-        if col:
-            keep.append(col)
-
-    df = df[[c for c in keep if c in df.columns]].copy()
-    df = df.sort_values(score_col, ascending=False).head(n).reset_index(drop=True)
-    return df
-
-def plot_heatmap_from_matrix(matrix_df: pd.DataFrame, title: str) -> None:
+def plot_heatmap_from_matrix(matrix_df: pd.DataFrame, title: str, cmap='viridis') -> None:
+    """Plot heatmap from similarity matrix"""
     if matrix_df.empty:
-        st.info("Matrix not found.")
+        st.info("Matrix not available.")
         return
-    fig, ax = plt.subplots()
-    im = ax.imshow(matrix_df.values, aspect="auto")
+    
+    fig, ax = plt.subplots(figsize=(10, 8))
+    im = ax.imshow(matrix_df.values, aspect="auto", cmap=cmap, vmin=0, vmax=1)
+    
     ax.set_xticks(range(len(matrix_df.columns)))
-    ax.set_xticklabels(matrix_df.columns, rotation=45, ha="right")
+    ax.set_xticklabels(matrix_df.columns, rotation=45, ha="right", fontsize=8)
     ax.set_yticks(range(len(matrix_df.index)))
-    ax.set_yticklabels(matrix_df.index)
-    ax.set_title(title)
-    plt.colorbar(im, ax=ax)
+    ax.set_yticklabels(matrix_df.index, fontsize=8)
+    ax.set_title(title, fontsize=12, fontweight='bold')
+    
+    plt.colorbar(im, ax=ax, label="Similarity [0-1]")
+    plt.tight_layout()
     st.pyplot(fig)
 
 def plot_dendrogram_from_matrix(matrix_df: pd.DataFrame, title: str) -> None:
+    """Plot hierarchical clustering dendrogram"""
     if matrix_df.empty:
-        st.info("Matrix not found.")
+        st.info("Matrix not available.")
         return
+    
     D = 1.0 - matrix_df.values
     np.fill_diagonal(D, 0.0)
     condensed = squareform(D, checks=False)
     Z = linkage(condensed, method="average")
-    fig, ax = plt.subplots()
-    dendrogram(Z, labels=matrix_df.index.tolist(), ax=ax)
-    ax.set_title(title)
-    ax.set_ylabel("distance")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    dendrogram(Z, labels=matrix_df.index.tolist(), ax=ax, leaf_font_size=9)
+    ax.set_title(title, fontsize=12, fontweight='bold')
+    ax.set_ylabel("Distance (1 - Similarity)")
+    ax.set_xlabel("Model")
+    plt.tight_layout()
     st.pyplot(fig)
 
-def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None) -> None:
+def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None, 
+                     axes_cols=["Frame", "Wall", "Dual", "Braced"]) -> None:
+    """Plot radar chart for system scores"""
     if df_scores.empty:
-        st.info("No structural system scores.")
+        st.info("No system scores available.")
         return
-    axes = ["frame", "wall", "braced", "dual"]
-    def mk(row): return [row[a] for a in axes] + [row[axes[0]]]
+    
+    def mk_trace(row): 
+        vals = [row[a] for a in axes_cols]
+        return vals + [vals[0]]
+    
     fig = go.Figure()
+    
     if selected:
         row = df_scores[df_scores["model"] == selected].iloc[0]
-        fig.add_trace(go.Scatterpolar(r=mk(row), theta=axes+[axes[0]], fill="toself", name=selected))
+        fig.add_trace(go.Scatterpolar(
+            r=mk_trace(row), 
+            theta=axes_cols + [axes_cols[0]], 
+            fill="toself", 
+            name=selected
+        ))
     else:
         for _, row in df_scores.iterrows():
-            fig.add_trace(go.Scatterpolar(r=mk(row), theta=axes+[axes[0]], fill="toself", name=row["model"]))
-    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0,1])))
-    st.plotly_chart(fig, width="stretch")
+            fig.add_trace(go.Scatterpolar(
+                r=mk_trace(row), 
+                theta=axes_cols + [axes_cols[0]], 
+                fill="toself", 
+                name=row["model"]
+            ))
+    
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 0.5])),
+        title="System Family Scores (S3)",
+        showlegend=True
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-@st.cache_data
-def list_pairwise_files(pairwise_dir: str) -> List[str]:
-    files = []
-    for root, _, fnames in os.walk(pairwise_dir):
-        for f in fnames:
-            if f.lower().endswith(".csv") and "typededge_predicate_contrib" in f.lower():
-                files.append(os.path.join(root, f))
-    return files
+def build_topn_from_matrix(matrix_df: pd.DataFrame, model_name: str, n: int = 5) -> pd.DataFrame:
+    """Extract top-N similar models from matrix"""
+    if matrix_df.empty or model_name not in matrix_df.index:
+        return pd.DataFrame()
+    
+    s = matrix_df.loc[model_name].drop(labels=[model_name]).sort_values(ascending=False).head(n)
+    df = s.reset_index()
+    df.columns = ["Model", "Similarity"]
+    return df
 
-@st.cache_data
-def load_pairwise_manifest(pairwise_dir: str) -> tuple[pd.DataFrame, Optional[str]]:
-    candidates = ["typededge_pairwise_manifest.csv", "typededge_predicate_contrib_manifest.csv"]
-    for cand in candidates:
-        p = os.path.join(pairwise_dir, cand)
-        if os.path.exists(p):
-            try:
-                df = pd.read_csv(p)
-                df.columns = [c.strip() for c in df.columns]
-                return df, p
-            except Exception:
-                pass
-    return pd.DataFrame(), None
+def verify_matrix(df: pd.DataFrame) -> dict:
+    """Verify similarity matrix properties"""
+    if df.empty:
+        return {"ok": False, "msg": "matrix missing"}
+    
+    A = df.values.astype(float)
+    sym = np.allclose(A, A.T, atol=1e-8)
+    diag = np.allclose(np.diag(A), 1.0, atol=1e-8)
+    rng = (A.min() >= -1e-9) and (A.max() <= 1 + 1e-9)
+    
+    return {"ok": sym and diag and rng, "sym": sym, "diag1": diag, "rangeOK": rng}
 
-def base_name_noext(name: str) -> str:
-    return os.path.splitext(name)[0] if name else name
-
-def file_contains_both(fname: str, a: str, b: str) -> bool:
-    fl = fname.lower()
-    return base_name_noext(a).lower() in fl and base_name_noext(b).lower() in fl
-
-def load_pairwise_predicate_contrib(a: str, b: str) -> pd.DataFrame:
-    dfm, _ = load_pairwise_manifest(PAIRWISE_DIR)
-    if not dfm.empty:
-        cols = dfm.columns.tolist()
-        a_col = pick_first_present(["A","model_a","Model_A","left","source"], cols)
-        b_col = pick_first_present(["B","model_b","Model_B","right","target"], cols)
-        p_col = pick_first_present(["path","file","filepath"], cols)
-        if a_col and b_col and p_col:
-            row = dfm[
-                ((dfm[a_col] == a) & (dfm[b_col] == b)) |
-                ((dfm[a_col] == b) & (dfm[b_col] == a))
-            ]
-            if row.empty:
-                row = dfm[dfm[p_col].astype(str).apply(lambda x: file_contains_both(x, a, b))]
-            if not row.empty:
-                p = row.iloc[0][p_col]
-                if not os.path.isabs(p):
-                    p = os.path.join(PAIRWISE_DIR, p)
-                if os.path.exists(p):
-                    try:
-                        return pd.read_csv(p)
-                    except Exception:
-                        pass
-    for f in list_pairwise_files(PAIRWISE_DIR):
-        if file_contains_both(os.path.basename(f), a, b):
-            try:
-                return pd.read_csv(f)
-            except Exception:
-                continue
-    return pd.DataFrame()
-
-# --- quick content features for uploaded RDF
+# --- Quick content features for uploaded RDF
 PRED_KEYS = [
     "adjacentElement", "adjacentZone", "intersectingElement",
     "bfo_0000178", "hasFunction", "hasQuality"
@@ -293,317 +256,575 @@ def cosine(a: np.ndarray, b: np.ndarray) -> float:
         return 0.0
     return float(np.dot(a, b) / (na * nb))
 
-def build_ref_features_from_paths(paths: List[str]) -> pd.DataFrame:
-    rows = []
-    for p in paths:
+def compare_uploaded_to_refs(uploaded_file, ref_models: List[str], topn: int = 5) -> pd.DataFrame:
+    """Compare uploaded RDF to reference models using content similarity"""
+    if uploaded_file is None or not ref_models:
+        return pd.DataFrame()
+    
+    up_feats = rdf_to_feature_vector(uploaded_file)
+    cols = sorted([c for c in up_feats.keys()])
+    u = np.array([up_feats.get(c, 0.0) for c in cols], dtype=float)
+    
+    sims = []
+    for model_path in ref_models:
         try:
-            feats = rdf_to_feature_vector(p)
-            feats["model"] = os.path.basename(p)
-            rows.append(feats)
+            ref_feats = rdf_to_feature_vector(BASE_DIR / model_path)
+            v = np.array([ref_feats.get(c, 0.0) for c in cols], dtype=float)
+            sims.append((model_path, cosine(u, v)))
         except Exception:
             pass
-    return pd.DataFrame(rows)
-
-def compare_uploaded_to_refs(uploaded_file, ref_df: pd.DataFrame, topn: int = 5) -> pd.DataFrame:
-    if uploaded_file is None or ref_df.empty:
+    
+    if not sims:
         return pd.DataFrame()
-    up_feats = rdf_to_feature_vector(uploaded_file)
-    cols = [c for c in ref_df.columns if c.startswith("feat__")]
-    u = np.array([up_feats.get(c, 0.0) for c in cols], dtype=float)
-    sims = []
-    for _, row in ref_df.iterrows():
-        v = np.array([row[c] for c in cols], dtype=float)
-        sims.append((row["model"], cosine(u, v)))
-    out = pd.DataFrame(sims, columns=["other", "content_only_cosine"]).sort_values(
-        "content_only_cosine", ascending=False
+    
+    out = pd.DataFrame(sims, columns=["Model", "Content_Cosine"]).sort_values(
+        "Content_Cosine", ascending=False
     ).head(topn)
     return out.reset_index(drop=True)
 
-# ---- fusion recompute helpers
-def _canon_pairs(df: pd.DataFrame, a_cands=None, b_cands=None):
-    if df.empty:
-        return df, None, None
-    a_cands = a_cands or ["model_a","model_A","A","left","source","model1","name_a","file_a"]
-    b_cands = b_cands or ["model_b","model_B","B","right","target","model2","name_b","file_b"]
-    a = pick_first_present(a_cands, df.columns)
-    b = pick_first_present(b_cands, df.columns)
-    if not a or not b:
-        return df, None, None
-    out = df.copy()
-    out["__A__"] = out[[a, b]].min(axis=1)
-    out["__B__"] = out[[a, b]].max(axis=1)
-    return out, "__A__", "__B__"
+# =========================================
+# LOAD ALL DATA
+# =========================================
+@st.cache_data
+def load_all_data():
+    """Load all data files for ALL10 dataset"""
+    data = {}
+    
+    # From /data folder (new results)
+    data['adjacency_evidence'] = load_csv_safe(DATA_DIR / "adjacency_evidence.csv")
+    data['functional_roles'] = load_csv_safe(DATA_DIR / "functional_roles_evidence.csv")
+    data['motif_evidence'] = load_json_safe(DATA_DIR / "motif_evidence.json")
+    
+    data['S1_adjacency'] = load_matrix_safe(DATA_DIR / "S1_adjacency_similarity.csv")
+    data['S2_motif'] = load_matrix_safe(DATA_DIR / "S2_motif_similarity.csv")
+    data['S3_system'] = load_matrix_safe(DATA_DIR / "S3_system_similarity.csv")
+    data['S4_functional'] = load_matrix_safe(DATA_DIR / "S4_functional_similarity.csv")
+    data['S_struct_fused'] = load_matrix_safe(DATA_DIR / "S_struct_fused_similarity.csv")
+    
+    # From thesis bundle
+    data['total_matrix'] = load_matrix_safe(CHANNEL_DIR / "total_similarity_matrix.csv")
+    data['content_matrix'] = load_matrix_safe(CHANNEL_DIR / "content_similarity_matrix.csv")
+    data['typed_edge_matrix'] = load_matrix_safe(CHANNEL_DIR / "typed_edge_similarity_matrix.csv")
+    data['edge_sets_matrix'] = load_matrix_safe(CHANNEL_DIR / "edge_sets_similarity_matrix.csv")
+    data['structural_matrix'] = load_matrix_safe(CHANNEL_DIR / "structural_similarity_matrix.csv")
+    
+    data['pairwise_total'] = load_csv_safe(CHANNEL_DIR / "pairwise_total_summary.csv")
+    data['pairwise_content'] = load_csv_safe(CHANNEL_DIR / "pairwise_content_summary.csv")
+    data['pairwise_typed'] = load_csv_safe(CHANNEL_DIR / "pairwise_typed_edge_summary.csv")
+    data['pairwise_edge'] = load_csv_safe(CHANNEL_DIR / "pairwise_edge_sets_summary.csv")
+    data['pairwise_struct'] = load_csv_safe(CHANNEL_DIR / "pairwise_structural_summary.csv")
+    
+    # Structural pipeline
+    data['s1_inventory'] = load_csv_safe(STRUCT_PIPELINE_DIR / "s1_inventory.csv")
+    data['s2_motifs'] = load_csv_safe(STRUCT_PIPELINE_DIR / "s2_motifs.csv")
+    data['s3_system_scores'] = load_csv_safe(STRUCT_PIPELINE_DIR / "s3_system_scores.csv")
+    data['s4_motif_share'] = load_csv_safe(STRUCT_PIPELINE_DIR / "s4_motif_share_vectors.csv")
+    
+    # Get model list
+    if not data['total_matrix'].empty:
+        data['models'] = data['total_matrix'].index.tolist()
+    else:
+        data['models'] = []
+    
+    return data
 
-def recompute_total_from_components(pairs_df: pd.DataFrame, pair_struct_df: pd.DataFrame, w=FUSION_W) -> pd.DataFrame:
-    if pairs_df.empty or pair_struct_df.empty:
-        return pd.DataFrame()
-    p, pa, pb = _canon_pairs(pairs_df)
-    s, sa, sb = _canon_pairs(pair_struct_df)
-    if not pa or not sa:
-        return pd.DataFrame()
-    content_col = pick_first_present(["content_cos","content_cosine"], p.columns)
-    typed_col   = pick_first_present(["typed_edge_cos","typed_edge_cosine"], p.columns)
-    edge_col    = pick_first_present(["edge_sets_jaccard","edge_jaccard_combined"], p.columns)
-    struct_col  = pick_first_present(["structural_similarity","S_struct"], s.columns)
-    if not all([content_col, typed_col, edge_col, struct_col]):
-        return pd.DataFrame()
-    m = pd.merge(
-        p[[pa, pb, content_col, typed_col, edge_col]],
-        s[[sa, sb, struct_col]],
-        left_on=[pa, pb], right_on=[sa, sb], how="inner"
-    )
-    m["S_total_fused"] = (
-        w["content"]*m[content_col] +
-        w["typed"]  *m[typed_col]   +
-        w["edge"]   *m[edge_col]    +
-        w["struct"] *m[struct_col]
-    )
-    m = m.rename(columns={pa: "A", pb: "B",
-                          content_col: "S_content", typed_col: "S_typed",
-                          edge_col: "S_edge", struct_col: "S_struct"})
-    return m
-
-def verify_matrix(df: pd.DataFrame) -> dict:
-    if df.empty:
-        return {"ok": False, "msg": "matrix missing"}
-    A = df.values.astype(float)
-    sym = np.allclose(A, A.T, atol=1e-8)
-    diag = np.allclose(np.diag(A), 1.0, atol=1e-8)
-    rng = (A.min() >= -1e-9) and (A.max() <= 1 + 1e-9)
-    return {"ok": sym and diag and rng, "sym": sym, "diag1": diag, "rangeOK": rng}
-
-def download_button(path: str, label: Optional[str] = None) -> None:
-    if not path or not os.path.exists(path):
-        return
-    with open(path, "rb") as f:
-        data = f.read()
-    st.download_button(label or os.path.basename(path), data, file_name=os.path.basename(path))
+# Load all data
+with st.spinner("Loading ALL10 dataset..."):
+    DATA = load_all_data()
 
 # =========================================
 # MAIN LAYOUT
 # =========================================
-st.title("Design Graph Similarity Web App")
+st.title("🏗️ Design Graph Similarity Analysis")
+st.markdown("### ALL10 Dataset - TUM Master Thesis")
 
-# Uploaded RDF quick info
+st.markdown("""
+This interactive demo presents the **4-channel similarity framework** applied to 10 architectural design graphs.
+The framework combines **content**, **typed-edge**, **edge-set**, and **structural** channels to compute 
+comprehensive design similarity.
+""")
+
+# Display uploaded RDF info
 if uploaded_rdf is not None:
     triples, nodes = short_rdf_info(uploaded_rdf)
-    st.info(f"Uploaded RDF: {uploaded_rdf.name}  |  triples: {triples}  |  unique subjects: {nodes}")
+    st.info(f"📄 **Uploaded:** {uploaded_rdf.name}  |  Triples: {triples}  |  Unique subjects: {nodes}")
 
-# Quick Compare (content-only)
-with st.expander("Quick Compare (content-only)"):
-    st.caption("Compare an uploaded RDF against a small reference set using a predicate histogram and cosine. This does not update the fused matrices.")
-    ref_files = st.file_uploader("Reference RDFs (multi-upload)", type=["rdf","ttl","nt"], accept_multiple_files=True)
-    ref_df = pd.DataFrame()
-    if ref_files:
-        rows = []
-        for f in ref_files:
-            try:
-                feats = rdf_to_feature_vector(f)
-                feats["model"] = f.name
-                rows.append(feats)
-            except Exception:
-                pass
-        if rows:
-            ref_df = pd.DataFrame(rows)
-    else:
-        search_paths = []
-        if SAMPLES_DIR and os.path.isdir(SAMPLES_DIR):
-            search_paths.extend(glob.glob(os.path.join(SAMPLES_DIR, "*.rdf")))
-        if not search_paths:
-            search_paths.extend(glob.glob(os.path.join(WORKSPACE_DIR, "*.rdf")))
-        if search_paths:
-            ref_df = build_ref_features_from_paths(search_paths)
-            if not ref_df.empty:
-                st.write("Using reference set from:", [os.path.basename(p) for p in search_paths])
+st.markdown("---")
 
-    if uploaded_rdf is None:
-        st.info("Upload a current design graph on the left.")
-    elif ref_df.empty:
-        st.info("The reference set is empty. Upload a few RDFs above or place them in the project folder.")
+# =========================================
+# SECTION 1: STRUCTURAL CHANNEL DEEP DIVE (S1→S4)
+# =========================================
+st.header("🔬 Structural Channel Deep Dive (S1 → S4)")
+st.markdown("""
+The **structural channel** (weight: 0.40) is decomposed into four sub-channels:
+- **S1**: Adjacency-based similarity
+- **S2**: Motif-based similarity  
+- **S3**: System family similarity
+- **S4**: Functional role similarity
+""")
+
+struct_tabs = st.tabs(["S1: Adjacency", "S2: Motifs", "S3: System Families", "S4: Functional Roles", "S_struct Fused"])
+
+# TAB 1: S1 - Adjacency
+with struct_tabs[0]:
+    st.subheader("S1: Adjacency Evidence")
+    st.markdown("Topological relationships between elements (adjacentElement, adjacentZone, etc.)")
+    
+    if not DATA['adjacency_evidence'].empty:
+        st.dataframe(DATA['adjacency_evidence'], use_container_width=True)
     else:
-        qc_topn = compare_uploaded_to_refs(uploaded_rdf, ref_df, top_n)
-        if not qc_topn.empty:
-            st.dataframe(qc_topn, width="stretch")
+        st.warning("Adjacency evidence not available")
+    
+    st.markdown("#### S1 Similarity Matrix")
+    if not DATA['S1_adjacency'].empty:
+        col1, col2 = st.columns(2)
+        with col1:
+            plot_heatmap_from_matrix(DATA['S1_adjacency'], "S1: Adjacency Similarity", cmap='YlOrRd')
+        with col2:
+            plot_dendrogram_from_matrix(DATA['S1_adjacency'], "S1: Adjacency Dendrogram")
+    else:
+        st.warning("S1 matrix not available")
+
+# TAB 2: S2 - Motifs
+with struct_tabs[1]:
+    st.subheader("S2: Motif Detection")
+    st.markdown("Structural motifs: M2 (frame node), M3 (wall-slab), M4 (core), M2b (brace node)")
+    
+    if not DATA['s2_motifs'].empty:
+        st.dataframe(DATA['s2_motifs'], use_container_width=True)
+    else:
+        st.warning("Motif data not available")
+    
+    st.markdown("#### S2 Similarity Matrix")
+    if not DATA['S2_motif'].empty:
+        col1, col2 = st.columns(2)
+        with col1:
+            plot_heatmap_from_matrix(DATA['S2_motif'], "S2: Motif Similarity", cmap='YlGnBu')
+        with col2:
+            plot_dendrogram_from_matrix(DATA['S2_motif'], "S2: Motif Dendrogram")
+    else:
+        st.warning("S2 matrix not available")
+
+# TAB 3: S3 - System Families
+with struct_tabs[2]:
+    st.subheader("S3: System Family Scores")
+    st.markdown("Normalized scores for Frame, Wall, Dual, and Braced systems")
+    
+    if not DATA['s3_system_scores'].empty:
+        st.dataframe(DATA['s3_system_scores'], use_container_width=True)
+        
+        st.markdown("#### Radar Chart Visualization")
+        mode = st.radio("Display mode", ["Overlay (all models)", "Single model"], horizontal=True, key="s3_radar")
+        
+        if mode == "Single model":
+            msel = st.selectbox("Select model", options=DATA['s3_system_scores']["model"].tolist())
+            plot_radar_scores(DATA['s3_system_scores'], selected=msel)
         else:
-            st.info("Could not compute comparison (empty feature vectors).")
+            plot_radar_scores(DATA['s3_system_scores'], selected=None)
+    else:
+        st.warning("System scores not available")
+    
+    st.markdown("#### S3 Similarity Matrix")
+    if not DATA['S3_system'].empty:
+        col1, col2 = st.columns(2)
+        with col1:
+            plot_heatmap_from_matrix(DATA['S3_system'], "S3: System Similarity", cmap='Greens')
+        with col2:
+            # Also show pre-rendered heatmap if available
+            s3_heatmap = DATA_DIR / "S3_system_similarity_heatmap.png"
+            if s3_heatmap.exists():
+                st.image(str(s3_heatmap), caption="S3 System Similarity (Pre-rendered)")
+    else:
+        st.warning("S3 matrix not available")
 
-# Load data for the rest of the app
-pair_total, mat_total = load_total_similarity(TOTAL_DIR)
-heatmap_png, dendro_png = load_total_visuals(TOTAL_VIS_DIR)
-struct_scores, struct_matrix, pair_struct = load_structural(STRUCT_DIR)
+# TAB 4: S4 - Functional Roles
+with struct_tabs[3]:
+    st.subheader("S4: Functional Role Evidence")
+    st.markdown("Structural roles: LoadBearing, Shear, Moment, Bracing")
+    
+    if not DATA['functional_roles'].empty:
+        st.dataframe(DATA['functional_roles'], use_container_width=True)
+    else:
+        st.warning("Functional roles evidence not available")
+    
+    st.markdown("#### S4 Similarity Matrix")
+    if not DATA['S4_functional'].empty:
+        col1, col2 = st.columns(2)
+        with col1:
+            plot_heatmap_from_matrix(DATA['S4_functional'], "S4: Functional Similarity", cmap='Purples')
+        with col2:
+            # Also show pre-rendered heatmap if available
+            s4_heatmap = DATA_DIR / "S4_functional_similarity_heatmap.png"
+            if s4_heatmap.exists():
+                st.image(str(s4_heatmap), caption="S4 Functional Similarity (Pre-rendered)")
+    else:
+        st.warning("S4 matrix not available")
 
-# Verification
-with st.expander("Verification"):
-    colA, colB = st.columns(2)
-    with colA:
-        st.write("Total matrix:", "OK" if not mat_total.empty else "missing")
-        if not mat_total.empty:
-            v = verify_matrix(mat_total)
-            if v["ok"]:
-                st.success(f"total_similarity_matrix: sym={v['sym']} diag1={v['diag1']} rangeOK={v['rangeOK']}")
-            else:
-                st.warning(f"total_similarity_matrix: sym={v['sym']} diag1={v['diag1']} rangeOK={v['rangeOK']}")
-    with colB:
-        st.write("Structural matrix:", "OK" if not struct_matrix.empty else "missing")
-        if not struct_matrix.empty:
-            v = verify_matrix(struct_matrix)
-            if v["ok"]:
-                st.success(f"struct_similarity_matrix: sym={v['sym']} diag1={v['diag1']} rangeOK={v['rangeOK']}")
-            else:
-                st.warning(f"struct_similarity_matrix: sym={v['sym']} diag1={v['diag1']} rangeOK={v['rangeOK']}")
+# TAB 5: S_struct Fused
+with struct_tabs[4]:
+    st.subheader("S_struct: Fused Structural Similarity")
+    st.markdown("Combined structural channel (S1 + S2 + S3 + S4)")
+    
+    if not DATA['S_struct_fused'].empty:
+        col1, col2 = st.columns(2)
+        with col1:
+            plot_heatmap_from_matrix(DATA['S_struct_fused'], "S_struct: Fused Structural Similarity", cmap='RdYlGn')
+        with col2:
+            plot_dendrogram_from_matrix(DATA['S_struct_fused'], "S_struct: Fused Dendrogram")
+    else:
+        st.warning("Fused structural matrix not available")
 
-# Results Overview (Total)
-st.header("Results overview: Total similarity")
+st.markdown("---")
 
-total_source = st.radio(
-    "Source",
-    ["Pairwise CSV (use the total column if present)", "Recompute fusion (0.30, 0.20, 0.10, 0.40)"],
-    horizontal=True
-)
+# =========================================
+# SECTION 2: TOTAL SIMILARITY (FINAL FUSION)
+# =========================================
+st.header("🎯 Total Similarity (Final Fusion)")
+st.markdown(f"""
+**Fusion formula:**  
+`S_total = {FUSION_W['content']}·S_content + {FUSION_W['typed']}·S_typed + {FUSION_W['edge']}·S_edge + {FUSION_W['struct']}·S_struct`
 
-target_model = st.selectbox(
-    "Select a model",
-    options=(mat_total.columns.tolist() if not mat_total.empty else [])
-)
+This combines all four channels into a single comprehensive similarity score.
+""")
 
-if target_model:
-    if total_source.startswith("Pairwise"):
-        topn_df = filter_topn_for_model(pair_total, target_model, top_n)
-        if topn_df.empty and not mat_total.empty:
-            topn_df = build_topn_from_matrix(mat_total, target_model, top_n)
-            st.caption("Pairwise CSV columns did not match expected names; Top-N is derived from the matrix.")
+if DATA['models']:
+    target_model = st.selectbox("Select a model to view its top-N similar models", options=DATA['models'])
+    
+    if target_model and not DATA['total_matrix'].empty:
+        topn_df = build_topn_from_matrix(DATA['total_matrix'], target_model, top_n)
+        
         if not topn_df.empty:
-            st.dataframe(topn_df, width="stretch")
+            st.markdown(f"#### Top {top_n} Similar Models to **{target_model}**")
+            st.dataframe(topn_df, use_container_width=True)
+            
+            # Show detailed breakdown if pairwise data available
+            if not DATA['pairwise_total'].empty:
+                st.markdown("##### Channel Breakdown")
+                # Try to find matching rows in pairwise data
+                pair_df = DATA['pairwise_total']
+                cols = pair_df.columns.tolist()
+                a_col = pick_first_present(["model_a", "model_A", "A"], cols)
+                b_col = pick_first_present(["model_b", "model_B", "B"], cols)
+                
+                if a_col and b_col:
+                    matches = pair_df[
+                        ((pair_df[a_col] == target_model) | (pair_df[b_col] == target_model))
+                    ].copy()
+                    
+                    if not matches.empty:
+                        matches["other"] = np.where(matches[a_col] == target_model, matches[b_col], matches[a_col])
+                        # Filter to top-N models
+                        top_models = topn_df["Model"].tolist()
+                        matches = matches[matches["other"].isin(top_models)]
+                        
+                        display_cols = ["other"]
+                        for col in ["S_total", "S_content", "S_typed", "S_edge", "S_struct"]:
+                            col_match = pick_first_present([col, col.replace("S_", "")], cols)
+                            if col_match:
+                                display_cols.append(col_match)
+                        
+                        if len(display_cols) > 1:
+                            st.dataframe(matches[display_cols].sort_values(display_cols[1], ascending=False), 
+                                       use_container_width=True)
         else:
-            st.info("Could not build Top-N (CSV/matrix not available).")
-    else:
-        fused = recompute_total_from_components(pair_total, pair_struct, FUSION_W)
-        if fused.empty:
-            st.info("Recompute requires content/typed/edge pairwise CSV columns and a structural pairwise CSV.")
-        else:
-            sel = fused[(fused["A"] == target_model) | (fused["B"] == target_model)].copy()
-            if sel.empty:
-                st.info("No pair found for the selected model.")
-            else:
-                sel["other"] = np.where(sel["A"] == target_model, sel["B"], sel["A"])
-                view = sel[["other","S_total_fused","S_content","S_typed","S_edge","S_struct"]] \
-                        .sort_values("S_total_fused", ascending=False).head(top_n) \
-                        .reset_index(drop=True)
-                st.dataframe(view, width="stretch")
-                st.caption(f"Fusion weights: content={FUSION_W['content']}  typed={FUSION_W['typed']}  edge={FUSION_W['edge']}  struct={FUSION_W['struct']}.")
-
-# Visualizations (Total)
-st.header("Visualizations: Total similarity")
-c1, c2 = st.columns(2)
-with c1:
-    st.subheader("Heatmap")
-    if heatmap_png: st.image(heatmap_png, width="stretch")
-    elif not mat_total.empty: plot_heatmap_from_matrix(mat_total, "Total similarity (0–1)")
-    else: st.info("Heatmap image or matrix not found.")
-with c2:
-    st.subheader("Dendrogram")
-    if dendro_png: st.image(dendro_png, width="stretch")
-    elif not mat_total.empty: plot_dendrogram_from_matrix(mat_total, "Hierarchical clustering (distance = 1 − S_total)")
-    else: st.info("Dendrogram image or matrix not found.")
-
-# Structural Profiles (S3)
-st.header("Structural profiles (S3)")
-if not struct_scores.empty:
-    mode = st.radio("Radar mode", ["Overlay (all models)", "Single model"], horizontal=True)
-    if mode == "Single model":
-        msel = st.selectbox("Model", options=struct_scores["model"].tolist())
-        plot_radar_scores(struct_scores, selected=msel)
-    else:
-        plot_radar_scores(struct_scores, selected=None)
+            st.info("No similar models found")
 else:
-    st.info("struct_system_scores.csv not found.")
+    st.warning("No models available in dataset")
 
-# Structural similarity (matrix view)
-with st.expander("Structural similarity (matrix view)"):
-    if not struct_matrix.empty:
-        plot_heatmap_from_matrix(struct_matrix, "Structural similarity (cosine)")
-        plot_dendrogram_from_matrix(struct_matrix, "Structural dendrogram")
-    else:
-        st.info("struct_similarity_matrix.csv not found.")
+st.markdown("#### Total Similarity Visualization")
+col1, col2 = st.columns(2)
 
-# Pairwise Explain (predicate-level)
-st.header("Pairwise explain (predicate-level)")
-if not mat_total.empty:
-    cpa, cpb = st.columns(2)
-    with cpa:
-        a = st.selectbox("Model A", options=mat_total.columns.tolist(), key="pa")
-    with cpb:
-        b = st.selectbox("Model B", options=[x for x in mat_total.columns if x != a], key="pb")
-    if a and b:
-        dfp = load_pairwise_predicate_contrib(a, b)
-        cols = dfp.columns.tolist() if not dfp.empty else []
-        pred_col  = pick_first_present(["predicate","relation","pred"], cols)
-        share_col = pick_first_present(["product_contrib_share","share","contrib_share"], cols)
-        diff_col  = pick_first_present(["abs_pct_diff_sum","diff_sum","abs_diff"], cols)
-        if dfp.empty:
-            st.info("Predicate-level contribution file not found for this pair.")
-        else:
-            c1, c2 = st.columns(2)
-            if share_col and pred_col:
-                top_share = dfp.sort_values(share_col, ascending=False).head(6).set_index(pred_col)[share_col]
-                c1.subheader("Similarity drivers (contribution share)")
-                c1.bar_chart(top_share)
-            else:
-                c1.info("No contribution share column found.")
-            if diff_col and pred_col:
-                top_diff = dfp.sort_values(diff_col, ascending=False).head(6).set_index(pred_col)[diff_col]
-                c2.subheader("Differences (abs % diff sum)")
-                c2.bar_chart(top_diff)
-            else:
-                c2.info("No difference column found.")
-else:
-    st.info("Load the total similarity matrix first to select models.")
-
-# Downloads
-st.header("Downloads")
-col1, col2, col3 = st.columns(3)
 with col1:
-    st.markdown("**Total**")
-    download_button(os.path.join(TOTAL_DIR, "pairwise_total_summary.csv"), "pairwise_total_summary.csv")
-    download_button(os.path.join(TOTAL_DIR, "total_similarity_matrix.csv"), "total_similarity_matrix.csv")
-    download_button(os.path.join(TOTAL_VIS_DIR, "total_heatmap.png"), "total_heatmap.png")
-    download_button(os.path.join(TOTAL_VIS_DIR, "total_dendrogram.png"), "total_dendrogram.png")
+    st.markdown("**Heatmap**")
+    # Try to show pre-rendered highlighted version
+    total_heatmap = DATA_DIR / "total_similarity_heatmap_highlighted.png"
+    if total_heatmap.exists():
+        st.image(str(total_heatmap), use_container_width=True)
+    elif not DATA['total_matrix'].empty:
+        plot_heatmap_from_matrix(DATA['total_matrix'], "Total Similarity", cmap='RdYlGn')
+    else:
+        st.info("Total similarity heatmap not available")
+
 with col2:
-    st.markdown("**Structural**")
-    download_button(os.path.join(STRUCT_DIR, "struct_system_scores.csv"), "struct_system_scores.csv")
-    download_button(os.path.join(STRUCT_DIR, "struct_similarity_matrix.csv"), "struct_similarity_matrix.csv")
-    download_button(os.path.join(STRUCT_DIR, "pairwise_structural_summary.csv"), "pairwise_structural_summary.csv")
-    download_button(os.path.join(STRUCT_DIR, "weights_used.json"), "weights_used.json")
-with col3:
-    st.markdown("**Typed-edge (predicate) – if present**")
-    for f in sorted(glob.glob(os.path.join(PAIRWISE_DIR, "**", "*.csv"), recursive=True))[:6]:
-        download_button(f, os.path.basename(f))
+    st.markdown("**Dendrogram**")
+    if not DATA['total_matrix'].empty:
+        plot_dendrogram_from_matrix(DATA['total_matrix'], "Hierarchical Clustering (Total)")
+    else:
+        st.info("Total similarity matrix not available")
 
-# Interpretation notes
-with st.expander("Interpretation notes"):
+st.markdown("---")
+
+# =========================================
+# SECTION 3: MODEL-PAIR COMPARISON
+# =========================================
+st.header("🔍 Model-Pair Comparison")
+st.markdown("Compare two models across all channels")
+
+if DATA['models']:
+    col_a, col_b = st.columns(2)
+    with col_a:
+        model_a = st.selectbox("Model A", options=DATA['models'], key="pair_a")
+    with col_b:
+        model_b = st.selectbox("Model B", options=[m for m in DATA['models'] if m != model_a], key="pair_b")
+    
+    if model_a and model_b:
+        st.markdown(f"### Comparing: **{model_a}** ↔ **{model_b}**")
+        
+        # Extract similarities from matrices
+        comparison = {}
+        
+        if not DATA['total_matrix'].empty and model_a in DATA['total_matrix'].index and model_b in DATA['total_matrix'].columns:
+            comparison['Total'] = DATA['total_matrix'].loc[model_a, model_b]
+        
+        if not DATA['content_matrix'].empty and model_a in DATA['content_matrix'].index:
+            comparison['Content'] = DATA['content_matrix'].loc[model_a, model_b]
+        
+        if not DATA['typed_edge_matrix'].empty and model_a in DATA['typed_edge_matrix'].index:
+            comparison['Typed-Edge'] = DATA['typed_edge_matrix'].loc[model_a, model_b]
+        
+        if not DATA['edge_sets_matrix'].empty and model_a in DATA['edge_sets_matrix'].index:
+            comparison['Edge-Sets'] = DATA['edge_sets_matrix'].loc[model_a, model_b]
+        
+        if not DATA['structural_matrix'].empty and model_a in DATA['structural_matrix'].index:
+            comparison['Structural'] = DATA['structural_matrix'].loc[model_a, model_b]
+        
+        if not DATA['S1_adjacency'].empty and model_a in DATA['S1_adjacency'].index:
+            comparison['S1_Adjacency'] = DATA['S1_adjacency'].loc[model_a, model_b]
+        
+        if not DATA['S2_motif'].empty and model_a in DATA['S2_motif'].index:
+            comparison['S2_Motif'] = DATA['S2_motif'].loc[model_a, model_b]
+        
+        if not DATA['S3_system'].empty and model_a in DATA['S3_system'].index:
+            comparison['S3_System'] = DATA['S3_system'].loc[model_a, model_b]
+        
+        if not DATA['S4_functional'].empty and model_a in DATA['S4_functional'].index:
+            comparison['S4_Functional'] = DATA['S4_functional'].loc[model_a, model_b]
+        
+        if comparison:
+            comp_df = pd.DataFrame(list(comparison.items()), columns=["Channel", "Similarity"])
+            comp_df["Similarity"] = comp_df["Similarity"].round(4)
+            
+            col1, col2 = st.columns([2, 3])
+            with col1:
+                st.dataframe(comp_df, use_container_width=True)
+            with col2:
+                # Bar chart
+                fig, ax = plt.subplots(figsize=(8, 5))
+                ax.barh(comp_df["Channel"], comp_df["Similarity"], color='steelblue')
+                ax.set_xlabel("Similarity")
+                ax.set_xlim(0, 1)
+                ax.set_title(f"Channel Comparison: {model_a} vs {model_b}")
+                plt.tight_layout()
+                st.pyplot(fig)
+        else:
+            st.info("No comparison data available for this pair")
+else:
+    st.warning("No models available")
+
+st.markdown("---")
+
+# =========================================
+# SECTION 4: QUICK COMPARE (CONTENT-ONLY)
+# =========================================
+with st.expander("🚀 Quick Compare (Content-Only)", expanded=False):
     st.markdown("""
-**Heatmap & dendrogram.**
-Two tight pairs are visible: Building_05 with Building_06, and Option03_Revising with Option04_Rev03.
-Freiform_Haus is the most distinct one among the five.
+    Upload a new RDF file to quickly compare it against the ALL10 reference set using 
+    **content similarity only** (predicate histogram + cosine). This is a fast approximation 
+    that does not require full graph analysis.
+    """)
+    
+    if uploaded_rdf is None:
+        st.info("Upload a design graph in the sidebar to use Quick Compare")
+    elif not DATA['models']:
+        st.warning("Reference model list not available")
+    else:
+        qc_result = compare_uploaded_to_refs(uploaded_rdf, DATA['models'], top_n)
+        
+        if not qc_result.empty:
+            st.markdown(f"#### Top {top_n} Similar Models (Content-Only)")
+            st.dataframe(qc_result, use_container_width=True)
+            st.caption("⚠️ This is a content-only approximation. For full similarity, run the complete pipeline.")
+        else:
+            st.info("Could not compute comparison (empty feature vectors)")
 
-**What drives the ranking.**
-The structural channel is high for all pairs, so separation mostly comes from the typed-edge channel, with content as a secondary contributor. Edge-set overlap is near zero except for near-duplicates.
+st.markdown("---")
 
-**How to read the radar.**
-System scores (frame, wall, braced, dual) are normalized to [0,1]; dual is capped by min(frame, wall) for a conservative interpretation.
-""")
+# =========================================
+# SECTION 5: VERIFICATION & DIAGNOSTICS
+# =========================================
+with st.expander("✅ Verification & Diagnostics", expanded=False):
+    st.markdown("### Matrix Verification")
+    st.markdown("Checking symmetry, unit diagonal, and [0,1] range for all similarity matrices")
+    
+    matrices_to_verify = {
+        "Total": DATA['total_matrix'],
+        "Content": DATA['content_matrix'],
+        "Typed-Edge": DATA['typed_edge_matrix'],
+        "Edge-Sets": DATA['edge_sets_matrix'],
+        "Structural": DATA['structural_matrix'],
+        "S1_Adjacency": DATA['S1_adjacency'],
+        "S2_Motif": DATA['S2_motif'],
+        "S3_System": DATA['S3_system'],
+        "S4_Functional": DATA['S4_functional'],
+        "S_struct_Fused": DATA['S_struct_fused']
+    }
+    
+    verification_results = []
+    for name, matrix in matrices_to_verify.items():
+        if not matrix.empty:
+            v = verify_matrix(matrix)
+            verification_results.append({
+                "Matrix": name,
+                "Symmetric": "✅" if v["sym"] else "❌",
+                "Unit Diagonal": "✅" if v["diag1"] else "❌",
+                "Range [0,1]": "✅" if v["rangeOK"] else "❌",
+                "Overall": "✅" if v["ok"] else "❌"
+            })
+        else:
+            verification_results.append({
+                "Matrix": name,
+                "Symmetric": "N/A",
+                "Unit Diagonal": "N/A",
+                "Range [0,1]": "N/A",
+                "Overall": "Missing"
+            })
+    
+    verify_df = pd.DataFrame(verification_results)
+    st.dataframe(verify_df, use_container_width=True)
 
-# Methods / About
-with st.expander("About / methods"):
+st.markdown("---")
+
+# =========================================
+# SECTION 6: DOWNLOADS
+# =========================================
+st.header("📥 Downloads")
+st.markdown("Download all data files and visualizations")
+
+download_cols = st.columns(3)
+
+with download_cols[0]:
+    st.markdown("**Similarity Matrices**")
+    for name, path in [
+        ("Total Similarity", CHANNEL_DIR / "total_similarity_matrix.csv"),
+        ("Content Similarity", CHANNEL_DIR / "content_similarity_matrix.csv"),
+        ("Typed-Edge Similarity", CHANNEL_DIR / "typed_edge_similarity_matrix.csv"),
+        ("Edge-Sets Similarity", CHANNEL_DIR / "edge_sets_similarity_matrix.csv"),
+        ("Structural Similarity", CHANNEL_DIR / "structural_similarity_matrix.csv"),
+    ]:
+        if path.exists():
+            with open(path, "rb") as f:
+                st.download_button(name, f, file_name=path.name, key=f"dl_{path.name}")
+
+with download_cols[1]:
+    st.markdown("**Structural Sub-Channels**")
+    for name, path in [
+        ("S1 Adjacency", DATA_DIR / "S1_adjacency_similarity.csv"),
+        ("S2 Motif", DATA_DIR / "S2_motif_similarity.csv"),
+        ("S3 System", DATA_DIR / "S3_system_similarity.csv"),
+        ("S4 Functional", DATA_DIR / "S4_functional_similarity.csv"),
+        ("S_struct Fused", DATA_DIR / "S_struct_fused_similarity.csv"),
+    ]:
+        if path.exists():
+            with open(path, "rb") as f:
+                st.download_button(name, f, file_name=path.name, key=f"dl_{path.name}")
+
+with download_cols[2]:
+    st.markdown("**Evidence Tables**")
+    for name, path in [
+        ("Adjacency Evidence", DATA_DIR / "adjacency_evidence.csv"),
+        ("Functional Roles", DATA_DIR / "functional_roles_evidence.csv"),
+        ("System Scores", STRUCT_PIPELINE_DIR / "s3_system_scores.csv"),
+        ("Motif Data", STRUCT_PIPELINE_DIR / "s2_motifs.csv"),
+    ]:
+        if path.exists():
+            with open(path, "rb") as f:
+                st.download_button(name, f, file_name=path.name, key=f"dl_{path.name}")
+
+st.markdown("---")
+
+# =========================================
+# SECTION 7: INTERPRETATION & METHODS
+# =========================================
+with st.expander("📖 Interpretation Notes", expanded=False):
+    st.markdown("""
+    ### Key Findings (ALL10 Dataset)
+    
+    **High Structural Similarity:**
+    - Most models show very high structural similarity (S_struct > 0.80)
+    - This indicates shared structural patterns despite geometric differences
+    
+    **Adjacency Channel (S1):**
+    - Very high similarity across most models (> 0.95)
+    - Models with more floors show higher adjacency counts
+    
+    **Motif Channel (S2):**
+    - Consistent motif patterns across models
+    - M2 (frame node), M3 (wall-slab), M4 (core) detected in most models
+    
+    **System Families (S3):**
+    - Wall systems dominate in most models
+    - Building03 (8-floor) shows highest wall system score
+    - Frame, Dual, and Braced systems present but less dominant
+    
+    **Functional Roles (S4):**
+    - Binary similarity: models either have functional roles or don't
+    - Building04 (7-floor) lacks functional role annotations
+    
+    **Total Similarity Patterns:**
+    - Tight clusters: BuildingArabic05/06, Building05/06
+    - Building04 and Building03 (high-rise models) form distinct cluster
+    - Building08 shows unique structural characteristics
+    """)
+
+with st.expander("🔬 Methods & Technical Details", expanded=False):
     st.markdown(f"""
-**Fusion**  
-`S_total = 0.30*S_content + 0.20*S_typed + 0.10*S_edge + 0.40*S_struct`.
+    ### Similarity Framework
+    
+    **Four-Channel Architecture:**
+    
+    1. **Content Channel (weight: {FUSION_W['content']}):**
+       - Predicate histogram + cosine similarity
+       - Captures semantic content distribution
+    
+    2. **Typed-Edge Channel (weight: {FUSION_W['typed']}):**
+       - Predicate-specific edge comparison
+       - Normalized by predicate type
+    
+    3. **Edge-Sets Channel (weight: {FUSION_W['edge']}):**
+       - Jaccard similarity of edge sets
+       - Captures structural overlap
+    
+    4. **Structural Channel (weight: {FUSION_W['struct']}):**
+       - **S1**: Adjacency-based (topological relationships)
+       - **S2**: Motif-based (structural patterns)
+       - **S3**: System families (Frame, Wall, Dual, Braced)
+       - **S4**: Functional roles (LoadBearing, Shear, Moment, Bracing)
+       - Fused using weighted combination
+    
+    **Fusion Formula:**
+    ```
+    S_total = 0.30·S_content + 0.20·S_typed + 0.10·S_edge + 0.40·S_struct
+    ```
+    
+    **Matrix Properties:**
+    - All similarity matrices are symmetric
+    - Unit diagonal (self-similarity = 1.0)
+    - Range: [0, 1]
+    
+    **Dataset:**
+    - 10 architectural design graphs
+    - RDF/OWL format with BFO/IFC ontologies
+    - Varying complexity (2-8 floors)
+    """)
 
-**Files**  
-Total: pairwise_total_summary.csv, total_similarity_matrix.csv, total_heatmap.png, total_dendrogram.png  
-Structural: struct_system_scores.csv, struct_similarity_matrix.csv, pairwise_structural_summary.csv  
-Predicate-level: CSV files under *04 - Pairwise_Diffs/Typed_Edge*  
-
-**Verification**  
-This app checks symmetry, unit diagonal, and [0,1] ranges for similarity matrices.
-""")
+# =========================================
+# FOOTER
+# =========================================
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: gray; font-size: 0.9em;'>
+    <p><strong>Design Graph Similarity Analysis - ALL10 Dataset</strong></p>
+    <p>TUM Master Thesis | Chair of Computational Modeling and Simulation</p>
+    <p>Framework: 4-channel similarity (Content + Typed-Edge + Edge-Sets + Structural)</p>
+</div>
+""", unsafe_allow_html=True)

@@ -1,5 +1,0 @@
-pred_iri,pred,product_contrib_sum,abs_pct_diff_sum,countA,countB,product_contrib_share
-https://w3id.org/bot#adjacentElement,adjacentElement,1178,0.2911093627065303,104,82,0.536918869644485
-https://spec.industrialontologies.org/ontology/core/Core/hasFunction,hasFunction,458,0.03742460005245214,30,21,0.20875113947128532
-http://purl.obolibrary.org/obo/BFO_0000178,BFO_0000178,444,0.03981117230527144,28,18,0.2023701002734731
-https://w3id.org/bot#adjacentZone,adjacentZone,114,0.32108575924468924,43,65,0.05195989061075661

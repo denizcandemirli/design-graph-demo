@@ -1,0 +1,11 @@
+model,LoadBearing,Shear,Moment,Bracing,total_LB,total_Shear,total_Moment,total_Bracing,n_struct_elements,has_roles
+2_Floor_Haus_BuildingArabic05.rdf,0.4727272727272727,0.0,0.0,0.0,26,0,0,0,55,True
+2_Floor_Haus_BuildingArabic06.rdf,0.3090909090909091,0.0,0.0,0.0,17,0,0,0,55,True
+2_Floor_Haus_Peri.rdf,0.18181818181818182,0.0,0.0,0.0,10,0,0,0,55,True
+2_Floor_RevitDemo_StructuralPlan_Building08.rdf,0.06896551724137931,0.0,0.0,0.0,6,0,0,0,87,True
+2_Floor_SlopedRoof_Revit-2026.rdf,0.18333333333333332,0.0,0.0,0.0,11,0,0,0,60,True
+7_Floor_Individualized Columns_Building04.rdf,0.0,0.0,0.0,0.0,0,0,0,0,55,False
+8_Floor_Pattern Freeform Columns_Building03.rdf,2.1636363636363636,0.0,0.0,0.0,119,0,0,0,55,True
+Building_05_DG.rdf,0.4727272727272727,0.0,0.0,0.0,26,0,0,0,55,True
+Building_06_DG.rdf,0.3090909090909091,0.0,0.0,0.0,17,0,0,0,55,True
+DFAB_Analog_Building07.rdf,0.10909090909090909,0.0,0.0,0.0,6,0,0,0,55,True
