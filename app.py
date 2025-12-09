@@ -155,13 +155,22 @@ def plot_dendrogram_from_matrix(matrix_df: pd.DataFrame, title: str) -> None:
     st.pyplot(fig)
 
 def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None, 
-                     axes_cols=["Frame", "Wall", "Dual", "Braced"]) -> None:
+                     axes_cols=None) -> None:
     """Plot radar chart for system scores"""
     if df_scores.empty:
         st.info("No system scores available.")
         return
     
-    # Check if required columns exist
+    # Auto-detect axes columns (all columns except 'model')
+    if axes_cols is None:
+        axes_cols = [col for col in df_scores.columns if col != 'model']
+    
+    # Check if we have any columns to plot
+    if not axes_cols:
+        st.warning(f"No system family columns found. Available columns: {list(df_scores.columns)}")
+        return
+    
+    # Verify all axes columns exist
     missing_cols = [col for col in axes_cols if col not in df_scores.columns]
     if missing_cols:
         st.warning(f"⚠️ Radar chart unavailable: Missing columns {missing_cols}")
