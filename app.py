@@ -155,28 +155,13 @@ def plot_dendrogram_from_matrix(matrix_df: pd.DataFrame, title: str) -> None:
     st.pyplot(fig)
 
 def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None, 
-                     axes_cols=None) -> None:
+                     axes_cols=["Frame", "Wall", "Dual", "Braced"]) -> None:
     """Plot radar chart for system scores"""
     if df_scores.empty:
         st.info("No system scores available.")
         return
     
-    # Auto-detect axes columns (all columns except 'model', if it exists)
-    if axes_cols is None:
-        # Check if 'model' column exists
-        model_col_exists = 'model' in df_scores.columns
-        if model_col_exists:
-            axes_cols = [col for col in df_scores.columns if col != 'model']
-        else:
-            # Use first column as name column, rest as axes
-            axes_cols = list(df_scores.columns[1:]) if len(df_scores.columns) > 1 else list(df_scores.columns)
-    
-    # Check if we have any columns to plot
-    if not axes_cols:
-        st.warning(f"No system family columns found. Available columns: {list(df_scores.columns)}")
-        return
-    
-    # Verify all axes columns exist
+    # Check if required columns exist
     missing_cols = [col for col in axes_cols if col not in df_scores.columns]
     if missing_cols:
         st.warning(f"⚠️ Radar chart unavailable: Missing columns {missing_cols}")
@@ -187,17 +172,10 @@ def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None,
         vals = [row[a] for a in axes_cols]
         return vals + [vals[0]]
     
-    # Determine name column
-    model_col_exists = 'model' in df_scores.columns
-    name_col = 'model' if model_col_exists else df_scores.columns[0]
-    
     fig = go.Figure()
     
     if selected:
-        if model_col_exists:
-            row = df_scores[df_scores[name_col] == selected].iloc[0]
-        else:
-            row = df_scores.iloc[0]  # Fallback if selection not possible
+        row = df_scores[df_scores["model"] == selected].iloc[0]
         fig.add_trace(go.Scatterpolar(
             r=mk_trace(row), 
             theta=axes_cols + [axes_cols[0]], 
@@ -205,18 +183,12 @@ def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None,
             name=selected
         ))
     else:
-        for idx, row in df_scores.iterrows():
-            # Get name from appropriate column, or use index as fallback
-            try:
-                label = str(row[name_col])
-            except:
-                label = f"Model {idx}"
-            
+        for _, row in df_scores.iterrows():
             fig.add_trace(go.Scatterpolar(
                 r=mk_trace(row), 
                 theta=axes_cols + [axes_cols[0]], 
                 fill="toself", 
-                name=label
+                name=row["model"]
             ))
     
     fig.update_layout(
@@ -229,8 +201,8 @@ def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None,
 def build_topn_from_matrix(matrix_df: pd.DataFrame, model_name: str, n: int = 5) -> pd.DataFrame:
     """Extract top-N similar models from matrix"""
     if matrix_df.empty or model_name not in matrix_df.index:
-    return pd.DataFrame()
-
+        return pd.DataFrame()
+    
     s = matrix_df.loc[model_name].drop(labels=[model_name]).sort_values(ascending=False).head(n)
     df = s.reset_index()
     df.columns = ["Model", "Similarity"]
@@ -505,7 +477,7 @@ with struct_tabs[3]:
             s4_heatmap = DATA_DIR / "S4_functional_similarity_heatmap.png"
             if s4_heatmap.exists():
                 st.image(str(s4_heatmap), caption="S4 Functional Similarity (Pre-rendered)")
-            else:
+    else:
         st.warning("S4 matrix not available")
 
 # TAB 5: S_struct Fused
@@ -519,7 +491,7 @@ with struct_tabs[4]:
             plot_heatmap_from_matrix(DATA['S_struct_fused'], "S_struct: Fused Structural Similarity", cmap='RdYlGn')
         with col2:
             plot_dendrogram_from_matrix(DATA['S_struct_fused'], "S_struct: Fused Dendrogram")
-            else:
+    else:
         st.warning("Fused structural matrix not available")
 
 st.markdown("---")
@@ -666,7 +638,7 @@ if DATA['models']:
                 st.pyplot(fig)
         else:
             st.info("No comparison data available for this pair")
-            else:
+else:
     st.warning("No models available")
 
 st.markdown("---")
@@ -692,7 +664,7 @@ with st.expander("🚀 Quick Compare (Content-Only)", expanded=False):
             st.markdown(f"#### Top {top_n} Similar Models (Content-Only)")
             st.dataframe(qc_result, use_container_width=True)
             st.caption("⚠️ This is a content-only approximation. For full similarity, run the complete pipeline.")
-else:
+        else:
             st.info("Could not compute comparison (empty feature vectors)")
 
 st.markdown("---")
