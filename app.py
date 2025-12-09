@@ -161,6 +161,13 @@ def plot_radar_scores(df_scores: pd.DataFrame, selected: Optional[str] = None,
         st.info("No system scores available.")
         return
     
+    # Check if required columns exist
+    missing_cols = [col for col in axes_cols if col not in df_scores.columns]
+    if missing_cols:
+        st.warning(f"⚠️ Radar chart unavailable: Missing columns {missing_cols}")
+        st.write("**Available columns:**", list(df_scores.columns))
+        return
+    
     def mk_trace(row): 
         vals = [row[a] for a in axes_cols]
         return vals + [vals[0]]
