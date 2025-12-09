@@ -365,9 +365,26 @@ if DEBUG_MODE:
         st.write("**Working Dir:**", os.getcwd())
         st.write("**data/ exists?**", DATA_DIR.exists())
         st.write("**bundle exists?**", BUNDLE_DIR.exists())
+        st.write("**CHANNEL_MATRICES/ exists?**", CHANNEL_DIR.exists())
+        st.write("**STRUCTURAL_PIPELINE/ exists?**", STRUCT_PIPELINE_DIR.exists())
+        
         if DATA_DIR.exists():
             files = list(DATA_DIR.iterdir())
             st.write(f"**Files in data/:** {len(files)}")
+            st.write("**Sample files:**", [f.name for f in list(DATA_DIR.iterdir())[:5]])
+        
+        if CHANNEL_DIR.exists():
+            files = list(CHANNEL_DIR.iterdir())
+            st.write(f"**Files in CHANNEL_MATRICES/:** {len(files)}")
+            st.write("**total_similarity_matrix.csv exists?**", (CHANNEL_DIR / "total_similarity_matrix.csv").exists())
+        else:
+            st.error("❌ CHANNEL_MATRICES folder NOT FOUND!")
+        
+        if STRUCT_PIPELINE_DIR.exists():
+            files = list(STRUCT_PIPELINE_DIR.iterdir())
+            st.write(f"**Files in STRUCTURAL_PIPELINE/:** {len(files)}")
+        else:
+            st.error("❌ STRUCTURAL_PIPELINE folder NOT FOUND!")
 
 st.markdown("---")
 
